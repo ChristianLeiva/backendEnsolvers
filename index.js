@@ -56,6 +56,10 @@ let selectAll = () => {
     })
 }
 
+let query = ()=>{
+
+}
+
 const returnList = async ()=>{
     
 
@@ -63,40 +67,43 @@ const returnList = async ()=>{
     return result;
 }
 
-app.get('/getItemList', (req, res) => {
+app.get('/getItemList', async (req, res) => {
 
     console.log("returning item list")
-    let r = returnList();
-    console.log("R", r)
+    let r = await returnList();
     res.send(r)
 })
 
-app.post('/addItem', (req, res) => {
+app.post('/addItem', async (req, res) => {
     console.log("item added", req.body)
-    //let id = uuidv4();
+
     let toDo = req.body;
-    //toDo.id = id;
-    //connection.connect();
-    var query = connection.query('INSERT INTO list SET ?', toDo, function (error, results, fields) {
-        if (error) throw error;
-        // Neat!
-      });
-    //connection.end();
-    res.json(returnList())
+
+
+    await new Promise((resolve, reject)=>{
+        var query = connection.query('INSERT INTO list SET ?', toDo, function (error, results, fields) {
+            if (error) reject(err);
+            resolve(results)
+          });
+    });
+
+    let r = await returnList();
+    res.json(r)
+
     
     
 })
 
-app.delete('/deleteItem/:id', (req, res) => {
+app.delete('/deleteItem/:id', async (req, res) => {
     console.log("item deleted", "id " + req.params.id)
 
-    let index = list.findIndex((elemento) => {
-        return elemento.id == req.params.id;
-    })
+    await new Promise((resolve, reject)=>{
+        var query = connection.query('DELETE from list where id = ' + req.params.id, function (error, results, fields) {
+            if (error) reject(err);
+            resolve(results)
+          });
+    });
 
-    if(index >= 0){
-        list.splice(index,1);
-    }  
-
-    res.json(list);
+    let r = await returnList();
+    res.json(r)
 })
