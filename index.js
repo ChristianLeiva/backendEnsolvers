@@ -5,7 +5,16 @@ const cors = require('cors');
 const bodyparser = require('body-parser');
 const app = express();
 const port = 4000
+const mysql      = require('mysql');
 
+const connection = mysql.createConnection({
+  host     : 'localhost',
+  user     : 'root',
+  password : 'admin',
+  database : 'todos'
+});
+
+connection.connect();
 
 app.use(cors());
 
@@ -21,10 +30,6 @@ app.listen(port, () => {
 })
 
 
-// get obtener
-// post crear
-// put actualizar
-// delete borrar 
 const list = [
     {
         id: 1,
@@ -38,25 +43,60 @@ const list = [
     }
 ];
 
+let selectAll = () => {
+    return new Promise((resolve, reject)=>{
+        connection.query('SELECT * from list', function (error, results, fields) {
+            
+            if (error) {
+                reject(["banana"]);
+            };
+            
+           resolve(results)
+        });
+    })
+}
+
+const returnList = async ()=>{
+    
+
+    let result = await selectAll();
+    return result;
+}
+
 app.get('/getItemList', (req, res) => {
-    res.json(list)
+
+    console.log("returning item list")
+    let r = returnList();
+    console.log("R", r)
+    res.send(r)
 })
 
-app.post('/addToDoList', (req, res) => {
-    let id = uuidv4();
+app.post('/addItem', (req, res) => {
+    console.log("item added", req.body)
+    //let id = uuidv4();
     let toDo = req.body;
-    toDo.id = id;
-    list.push(toDo);
-    res.json(list)
+    //toDo.id = id;
+    //connection.connect();
+    var query = connection.query('INSERT INTO list SET ?', toDo, function (error, results, fields) {
+        if (error) throw error;
+        // Neat!
+      });
+    //connection.end();
+    res.json(returnList())
+    
+    
 })
 
-app.delete('/deleteItemList/:id', (req, res) => {
-    //eliminar un item de la lista.
-    //actualizar lista.
-    //retornar la lista
+app.delete('/deleteItem/:id', (req, res) => {
+    console.log("item deleted", "id " + req.params.id)
 
-    list.findIndex((elemento) => {
-
+    let index = list.findIndex((elemento) => {
         return elemento.id == req.params.id;
     })
+
+    if(index >= 0){
+        list.splice(index,1);
+    }  
+
+    res.json(list);
 })
